@@ -1,5 +1,11 @@
 *.pdf
 
+checkpoints/
+results/
+features/
+logs/
+archive/
+
 # Virtual environment
 .venv/
 venv/

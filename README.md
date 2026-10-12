@@ -29,13 +29,13 @@ uv run python -m src.data
 ```
 
 This downloads Oxford-IIIT Pet (about 800 MB) into `data/` with torchvision, then
-builds the splits and checks them. It prints:
+validates the committed splits against the local dataset. It prints:
 
 ```
 trainval 3680, test 3669, classes 37
 val 740, train pool 2940
 min train pool images per class: 73
-splits saved to splits/splits.json
+splits valid: splits/splits.json
 ```
 
 Splits (indices into the official `trainval` split):
@@ -46,8 +46,9 @@ Splits (indices into the official `trainval` split):
 - **support sets**: K images per breed from the train pool for K = 1, 5, 10, 20 and
   seeds 0–4. For a fixed seed the sets are nested: K = 5 contains K = 1, and so on.
 
-`splits/splits.json` is committed, so everyone uses the same images. Rerunning
-`src.data` regenerates the splits and fails if they differ from the saved file.
+`splits/splits.json` is committed, so everyone uses the same images. `src.data`
+only loads and validates this file; it does not regenerate the splits. To
+recreate the file from scratch, call `save_splits(make_splits(...))` explicitly.
 
 Preprocessing for every image: resize the shorter side to 256, center crop
 224×224, ImageNet mean/std normalization.
@@ -62,3 +63,52 @@ test = load_pets("test")
 splits = load_splits()
 support = support_subset(trainval, splits, k=5, seed=0)  # 37 * 5 images
 ```
+
+## Baseline (ResNet-50)
+
+All paths, hyperparameters and experiment definitions live in `src/config.py`.
+
+### 1. Cache frozen ResNet-50 embeddings
+
+Used by the linear classifiers (E1/E4). Writes `features/resnet50_{split}_{x,y}.npy`:
+
+```bash
+uv run python -m src.features
+```
+
+### 2. Fine-tune (E5 and E6)
+
+E5 trains the new head plus `layer4`; E6 trains the whole network. Runs are
+deterministic (seeded from `FINETUNE_SEED`) and a restart resumes: runs already
+present in `results/finetune.csv` are skipped.
+
+```bash
+uv run python -m src.finetune
+```
+
+This runs 2 variants × 4 values of K × 5 seeds = 40 runs. Each run writes its
+best-validation checkpoint to `checkpoints/{variant}_k{K}_seed{seed}.pt`, one row
+to `results/finetune.csv`, and per-epoch progress to `logs/finetune_output.txt`.
+
+To run a single configuration:
+
+```bash
+uv run python -c "import src.finetune as f; from src.config import DEVICE; f.run_finetune('layer4', 5, 0, DEVICE)"
+```
+
+### 3. Select the best checkpoint
+
+Recomputes validation accuracy for every checkpoint, copies the best to
+`checkpoints/best.pt`, evaluates it on test once, and writes
+`results/best_model.json`. Selection uses validation only, never test.
+
+```bash
+uv run python -m src.select_best
+```
+
+### Outputs
+
+- `features/`: cached embeddings (ignored by git);
+- `checkpoints/`: fine-tuned weights (ignored by git);
+- `results/`: `finetune.csv`, `checkpoint_val.csv`, `best_model.json` (ignored by git);
+- `logs/`: run logs (ignored by git).
