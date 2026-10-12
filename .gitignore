@@ -1,0 +1,30 @@
+*.pdf
+
+# Virtual environment
+.venv/
+venv/
+
+# Dataset and cached embeddings
+data/
+*.npy
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# macOS
+.DS_Store
+
+# Skills
+skill.md
+report.md

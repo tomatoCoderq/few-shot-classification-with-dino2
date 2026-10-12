@@ -1,0 +1,219 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper, margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+\setlist{itemsep=2pt, topsep=4pt}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+\title{Few-Shot Classification with DINOv2 Embeddings\\
+\large Project Plan}
+\author{
+    \texttt{m.mestnikov@innopolis.university}\\
+    \texttt{e.moskal@innopolis.university}\\
+    \texttt{k.sadykov@innopolis.university}\\
+    \texttt{m.klimov@innopolis.university}
+}
+\date{October 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Project Scope}
+
+We classify the 37 cat and dog breeds of Oxford-IIIT Pet when only
+$K \in \{1, 5, 10, 20\}$ labeled images per breed are available for training.
+
+\textbf{Research question.} With the same $K$ labeled images per breed, how much
+better do frozen self-supervised DINOv2 embeddings classify breeds than a
+supervised ImageNet ResNet-50 transferred to the task, and which breeds remain
+hard for both?
+
+The main condition is a frozen DINOv2 ViT-S/14 encoder with a lightweight
+classifier trained on its embeddings. We use ViT-S/14 because, with 21M parameters,
+it is close in size to ResNet-50 (25M), so the comparison is not decided by model
+capacity; it also runs fast enough on a laptop. The baseline is a ResNet-50 pretrained with
+labels on ImageNet and transferred to our task in three ways. Each way replaces the 1000-class ImageNet head with a new
+37-class head and differs only in what else is trained: nothing, the last residual
+stage, or the whole network.
+Both conditions see the same images, the same splits and the same support sets.
+
+\section{Dataset Preparation}
+
+\textbf{Dataset.} Oxford-IIIT Pet: 7,349 images of 37 breeds (12 cat, 25 dog),
+about 200 images per breed. We load it with \texttt{torchvision.datasets.OxfordIIITPet}
+and use only the breed labels.
+
+\textbf{Split.}
+\begin{itemize}
+    \item \emph{Test}: the official test split (3,669 images). Used once, for final metrics.
+    \item \emph{Validation}: 20 images per breed (740 images) taken from the
+          official trainval split with a fixed seed. Used to choose
+          hyperparameters and the number of fine-tuning epochs.
+    \item \emph{Train pool}: the remaining trainval images (about 2,940,
+          at least 70 per breed). Few-shot support sets are drawn only from here.
+\end{itemize}
+
+\textbf{Support sets.} For each $K$ we draw 5 support sets with seeds 0--4.
+Every method trains on exactly the same support sets, so results are paired
+across methods. Each test image belongs to the test split only, which rules out
+train/test leakage on our side.
+
+\textbf{Preprocessing.} Resize the shorter side to 256, center crop to
+$224 \times 224$, normalize with ImageNet mean and standard deviation.
+224 is a multiple of the DINOv2 patch size (14), so both backbones get the same input.
+Fine-tuning runs add random resized crops and horizontal flips to the support images.
+
+\section{Experimental Plan}
+
+\subsection{Models}
+
+\smallskip
+\begin{tabular}{@{}lll@{}}
+\toprule
+Backbone & Pretraining & Embedding \\
+\midrule
+DINOv2 ViT-S/14 & self-supervised, LVD-142M & CLS token, 384-d \\
+DINOv2 ViT-B/14 (ablation) & self-supervised, LVD-142M & CLS token, 768-d \\
+ResNet-50 (\texttt{IMAGENET1K\_V2}) & supervised, ImageNet-1k & global avg.\ pool, 2048-d \\
+\bottomrule
+\end{tabular}
+\smallskip
+
+\subsection{Classifiers on frozen embeddings}
+
+Embeddings are L2-normalized.
+\begin{itemize}
+    \item \textbf{Prototype (nearest class mean)}: each breed is the mean of its
+          $K$ support embeddings; a test image gets the breed with the highest cosine similarity.
+    \item \textbf{k-NN}: cosine distance, $k$ chosen on validation ($k=1$ when $K=1$).
+    \item \textbf{Logistic regression}: multinomial, L2 penalty, $C$ chosen on validation.
+\end{itemize}
+
+\subsection{Supervised transfer-learning baseline}
+
+\begin{enumerate}
+    \item \textbf{New head only}: frozen ResNet-50, same three classifiers as above.
+          This is the main baseline, because only the representation differs from the DINOv2 condition.
+    \item \textbf{New head + \texttt{layer4}}: the new linear head and the last residual stage
+          are trained with AdamW and cross-entropy; earlier layers stay frozen.
+    \item \textbf{New head + full backbone}: all weights are trained, with a lower learning
+          rate for the backbone than for the head.
+\end{enumerate}
+For variants 2 and 3, BatchNorm layers stay in eval mode (support batches are
+too small for reliable batch statistics), and the epoch count is chosen on validation.
+We expect variant 3 to overfit at small $K$ and will report it either way.
+
+\subsection{Experiment order}
+
+Each experiment changes one factor relative to an earlier one. Every experiment
+is run for all four values of $K$ and all five support sets, so each one yields an
+accuracy-vs-$K$ curve that we compare with the curve of the earlier experiment.
+
+\smallskip
+\begin{tabular}{@{}lll@{}}
+\toprule
+ID & Setting & Changed vs. \\
+\midrule
+E1 & ResNet-50 frozen + logistic regression & baseline \\
+E2 & DINOv2 ViT-S/14 frozen + logistic regression & E1: backbone \\
+E3 & DINOv2 ViT-S/14 + prototype / k-NN & E2: classifier \\
+E4 & ResNet-50 + prototype / k-NN & E1: classifier \\
+E5 & ResNet-50 new head + \texttt{layer4} fine-tuning & E1: trainable layers \\
+E6 & ResNet-50 full fine-tuning & E5: trainable layers \\
+E7 & DINOv2 ViT-B/14 + best classifier from E3 & E2/E3: model size \\
+\bottomrule
+\end{tabular}
+\smallskip
+
+E3, E4 and E7 are our ablations: they keep everything fixed except the classifier
+(E3, E4) or the DINOv2 model size (E7), which shows how much of the result comes from
+the classifier choice and how much from encoder capacity.
+Every run writes one row (experiment, backbone, classifier, $K$, seed, accuracy,
+macro-F1, training time, device) to a CSV file in \texttt{results/}, so every
+number in the final report can be regenerated from the code.
+
+\subsection{Metrics}
+
+\textbf{Quality metrics.}
+\begin{itemize}
+    \item \textbf{Top-1 accuracy} and \textbf{macro-F1} on the test split,
+          reported as mean $\pm$ std over the 5 support sets for each $K$.
+    \item \textbf{Per-breed accuracy} and the \textbf{confusion matrix} at $K=20$,
+          to find the hardest breeds and the most frequent confusions.
+\end{itemize}
+
+\textbf{Efficiency metrics.}
+\begin{itemize}
+    \item \textbf{Training time} per run: fitting a classifier on cached
+          embeddings, or fine-tuning the ResNet-50 variants.
+    \item \textbf{Parameters} (millions): total and trainable, for each backbone and variant.
+    \item \textbf{GFLOPs} per $224 \times 224$ image for one forward pass of each backbone.
+\end{itemize}
+
+\subsection{Failure analysis}
+
+We take the breeds with the lowest per-breed accuracy and check whether they are
+hard for both backbones or for only one. For at least three misclassified test
+images we show the image, the predicted breed and its nearest support images,
+and check concrete causes: visually similar breeds, unusual pose or occlusion,
+several animals in one image, cluttered background, low resolution.
+
+\section{Implementation Plan}
+
+\textbf{Pipeline.}
+\begin{enumerate}
+    \item Download the dataset, build the validation split and the train pool,
+          sample and save the support-set indices for every $K$ and seed.
+    \item Run each frozen backbone once over all 7,349 images and cache the
+          embeddings as \texttt{.npy} files.
+    \item Train and evaluate the three lightweight classifiers on cached embeddings (CPU, seconds per run).
+    \item Fine-tune ResNet-50 variants 2 and 3 on GPU for every $K$ and seed (40 runs).
+    \item Aggregate metrics into CSV tables, plot accuracy vs.\ $K$ for all methods,
+          compute per-breed accuracy and confusion matrices, collect failure cases.
+\end{enumerate}
+
+\textbf{Code layout.} Reusable code in \texttt{src/} (\texttt{data.py},
+\texttt{features.py}, \texttt{classifiers.py}, \texttt{finetune.py},
+\texttt{evaluate.py}); experiments, plots and the demo in \texttt{notebooks/};
+metrics and figures in \texttt{results/}.
+
+\textbf{Libraries and weights.} PyTorch, torchvision, scikit-learn, NumPy, pandas,
+Matplotlib. DINOv2 weights from \texttt{torch.hub} (\texttt{facebookresearch/dinov2}),
+ResNet-50 weights from torchvision.
+
+\textbf{Hardware.} Apple Silicon (MPS), RTX 4060 Laptop GPU and Kaggle GPUs for fine-tuning.
+
+\textbf{Known limitation.} DINOv2's LVD-142M pretraining set was assembled by
+retrieving web images similar to public datasets, so it may contain pet images
+close to ours. We cannot check this and will state it in the final report.
+
+\section{Team Responsibilities}
+
+\smallskip
+\begin{tabular}{@{}lp{0.72\textwidth}@{}}
+\toprule
+Member & Responsibility \\
+\midrule
+Marat & Supervised baseline: ResNet-50 embeddings, fine-tuning variants 2 and 3 on GPU. \\
+Evgeni & DINOv2: embedding extraction and caching, prototype / k-NN /
+         logistic regression classifiers, ViT-B/14 ablation. \\
+Khasan & Data pipeline: download, splits, support-set sampling, preprocessing;
+        README, \texttt{requirements.txt}, reproducibility check. \\
+Martin & Evaluation: metrics, result tables and plots, per-breed analysis,
+         failure cases. \\
+\bottomrule
+\end{tabular}
+\smallskip
+
+All four members write the two-page summary and prepare the demo together, and each
+member runs the full pipeline once before submission.
+
+\end{document}
