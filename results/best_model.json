@@ -1,0 +1,10 @@
+{
+  "experiment": "E5",
+  "variant": "layer4",
+  "K": 20,
+  "seed": 4,
+  "val_accuracy": 0.9486486486486486,
+  "test_accuracy": 0.8926137912237667,
+  "macro_f1": 0.8903612616589204,
+  "checkpoint": "best.pt"
+}
