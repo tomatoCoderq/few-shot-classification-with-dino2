@@ -1,7 +1,7 @@
 *.pdf
 
 checkpoints/
-results/
+# results/
 features/
 logs/
 archive/
