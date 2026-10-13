@@ -76,7 +76,17 @@ Used by the linear classifiers (E1/E4). Writes `features/resnet50_{split}_{x,y}.
 uv run python -m src.features
 ```
 
-### 2. Fine-tune (E5 and E6)
+### 2. Linear probe (E1)
+
+Logistic regression on the cached, L2-normalized embeddings for every K and seed;
+C is chosen on validation. Takes about 15 seconds on CPU and writes
+`results/linear_probe.csv`:
+
+```bash
+uv run python -m src.linear_probe
+```
+
+### 3. Fine-tune (E5 and E6)
 
 E5 trains the new head plus `layer4`; E6 trains the whole network. Runs are
 deterministic (seeded from `FINETUNE_SEED`) and a restart resumes: runs already
@@ -96,7 +106,7 @@ To run a single configuration:
 uv run python -c "import src.finetune as f; from src.config import DEVICE; f.run_finetune('layer4', 5, 0, DEVICE)"
 ```
 
-### 3. Select the best checkpoint
+### 4. Select the best checkpoint
 
 Recomputes validation accuracy for every checkpoint, copies the best to
 `checkpoints/best.pt`, evaluates it on test once, and writes
@@ -110,5 +120,5 @@ uv run python -m src.select_best
 
 - `features/`: cached embeddings (ignored by git);
 - `checkpoints/`: fine-tuned weights (ignored by git);
-- `results/`: `finetune.csv`, `checkpoint_val.csv`, `best_model.json` (ignored by git);
+- `results/`: `linear_probe.csv`, `finetune.csv`, `checkpoint_val.csv`, `best_model.json` (committed);
 - `logs/`: run logs (ignored by git).

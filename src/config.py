@@ -18,6 +18,7 @@ FINETUNE_RESULTS_PATH = RESULTS_DIR / "finetune.csv"
 VAL_RESULTS_PATH = RESULTS_DIR / "checkpoint_val.csv"
 BEST_RESULT_PATH = RESULTS_DIR / "best_model.json"
 BEST_CHECKPOINT_PATH = CHECKPOINT_DIR / "best.pt"
+LINEAR_PROBE_RESULTS_PATH = RESULTS_DIR / "linear_probe.csv"
 
 # File name templates
 FEATURE_FILE = "{backbone}_{split}_{kind}.npy"  # kind: "x" (embeddings) or "y" (labels)
@@ -53,6 +54,10 @@ VARIANTS = {"layer4": "E5", "full": "E6"}
 VARIANT_TRAINABLE = {"layer4": ("layer4", "fc"), "full": ("",)}
 HEAD_PREFIX = "fc"
 
+# Linear probe (E1): C is chosen on validation
+LINEAR_PROBE_C_GRID = (0.1, 1.0, 10.0, 100.0, 1000.0)
+LINEAR_PROBE_MAX_ITER = 5000
+
 # Fine-tuning
 EPOCHS = 30
 BATCH_SIZE = 32
@@ -67,7 +72,12 @@ FINETUNE_SEED = 0
 FEATURE_BATCH_SIZE = 64
 
 # Runtime
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    DEVICE = torch.device("mps")
+else:
+    DEVICE = torch.device("cpu")
 NUM_WORKERS = 4
 # Required for deterministic cuBLAS on CUDA
 CUBLAS_WORKSPACE_CONFIG = ":4096:8"
