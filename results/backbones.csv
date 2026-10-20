@@ -1,0 +1,4 @@
+backbone,embedding_dim,total_params,gflops_per_image,extraction_time_s,device
+dinov2_vits14,384,22056576,12.247123968,51.914403200149536,cuda
+resnet50,2048,23508032,8.174272512,51.165825605392456,cuda
+dinov2_vitb14,768,86580480,46.322454528,95.34003949165344,cuda

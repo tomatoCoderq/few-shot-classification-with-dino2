@@ -70,10 +70,11 @@ All paths, hyperparameters and experiment definitions live in `src/config.py`.
 
 ### 1. Cache frozen ResNet-50 embeddings
 
-Used by the linear classifiers (E1/E4). Writes `features/resnet50_{split}_{x,y}.npy`:
+Used by the linear classifiers (E1/E4). Writes `features/resnet50_{split}_{x,y}.npy`
+and the backbone's parameters, GFLOPs and extraction time to `results/backbones.csv`:
 
 ```bash
-uv run python -m src.features
+uv run python -m src.features resnet50
 ```
 
 ### 2. Linear probe (E1)
@@ -116,9 +117,39 @@ Recomputes validation accuracy for every checkpoint, copies the best to
 uv run python -m src.select_best
 ```
 
+## DINOv2 and lightweight classifiers
+
+### 1. Cache frozen DINOv2 embeddings
+
+Weights come from `torch.hub` (`facebookresearch/dinov2`, downloaded to
+`~/.cache/torch/hub` on the first run); the embedding is the CLS token. Same
+preprocessing as ResNet-50. About 50 s (ViT-S/14) and 95 s (ViT-B/14) on an
+RTX 4060 Laptop GPU:
+
+```bash
+uv run python -m src.features dinov2_vits14
+uv run python -m src.features dinov2_vitb14
+```
+
+### 2. Classifiers on frozen embeddings (E2, E3, E4, E7, E7b)
+
+Logistic regression (C on validation, same as E1), prototype (nearest class
+mean, cosine) and cosine k-NN (k ≤ K on validation) for every K and seed.
+Experiments are defined in `FROZEN_EXPERIMENTS` in `src/config.py`; each takes
+seconds on CPU and writes `results/frozen_{experiment}.csv`:
+
+```bash
+uv run python -m src.classifiers E2   # ViT-S/14 + logreg
+uv run python -m src.classifiers E3   # ViT-S/14 + prototype, k-NN
+uv run python -m src.classifiers E4   # ResNet-50 + prototype, k-NN
+uv run python -m src.classifiers E7   # ViT-B/14 + prototype
+uv run python -m src.classifiers E7b  # ViT-B/14 + logreg
+```
+
 ### Outputs
 
 - `features/`: cached embeddings (ignored by git);
 - `checkpoints/`: fine-tuned weights (ignored by git);
-- `results/`: `linear_probe.csv`, `finetune.csv`, `checkpoint_val.csv`, `best_model.json` (committed);
+- `results/`: `linear_probe.csv`, `finetune.csv`, `checkpoint_val.csv`, `best_model.json`,
+  `backbones.csv`, `frozen_e*.csv` (committed);
 - `logs/`: run logs (ignored by git).

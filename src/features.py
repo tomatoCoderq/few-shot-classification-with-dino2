@@ -1,3 +1,12 @@
+"""Cache frozen-backbone embeddings for trainval and test as .npy files.
+
+Run: python -m src.features {resnet50,dinov2_vits14,dinov2_vitb14}
+"""
+
+import argparse
+import csv
+import time
+
 import numpy as np
 import torch
 from torch import nn
@@ -8,12 +17,14 @@ from torchvision.models import ResNet50_Weights, resnet50
 
 from src.config import (
     BACKBONE,
+    BACKBONES_RESULTS_PATH,
     DATA_ROOT,
     DEVICE,
-    EMBEDDING_DIM,
+    DINOV2_REPO,
     FEATURE_BATCH_SIZE,
     FEATURE_FILE,
     FEATURES_DIR,
+    FROZEN_EMBEDDING_DIMS,
     IMAGE_SIZE,
     MEAN,
     NUM_WORKERS,
@@ -39,6 +50,21 @@ def load_backbone(device):
     model = resnet50(weights=getattr(ResNet50_Weights, PRETRAINED_WEIGHTS))
     model.fc = nn.Identity()
     return model.eval().to(device)
+
+
+def load_dinov2(name, device):
+    """Frozen DINOv2 from torch.hub; its forward returns the normalized CLS token."""
+    # skip_validation avoids a GitHub API call that fails when the API is rate limited
+    model = torch.hub.load(DINOV2_REPO, name, skip_validation=True, trust_repo=True)
+    return model.eval().to(device)
+
+
+def load_frozen_backbone(backbone, device):
+    """ResNet-50 or one of the DINOv2 models listed in FROZEN_EMBEDDING_DIMS."""
+    assert backbone in FROZEN_EMBEDDING_DIMS, backbone
+    if backbone == BACKBONE:
+        return load_backbone(device)
+    return load_dinov2(backbone, device)
 
 
 @torch.no_grad()
@@ -74,10 +100,25 @@ def gflops_per_image(model):
     return counter.get_total_flops() / 1e9
 
 
-if __name__ == "__main__":
-    # Extract backbone embeddings for trainval and test and save them as .npy.
+def save_backbone_stats(row):
+    """Write one row per backbone to results/backbones.csv, replacing an older row."""
+    rows = []
+    if BACKBONES_RESULTS_PATH.exists():
+        with BACKBONES_RESULTS_PATH.open(newline="") as f:
+            rows = [r for r in csv.DictReader(f) if r["backbone"] != row["backbone"]]
+    rows.append(row)
+    BACKBONES_RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with BACKBONES_RESULTS_PATH.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(row))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def main(backbone):
+    """Extract embeddings for trainval and test, save them and the backbone's cost."""
     FEATURES_DIR.mkdir(parents=True, exist_ok=True)
-    model = load_backbone(DEVICE)
+    model = load_frozen_backbone(backbone, DEVICE)
+    extraction_time = 0.0
     for split in (TRAINVAL_SPLIT, TEST_SPLIT):
         dataset = OxfordIIITPet(
             DATA_ROOT,
@@ -86,8 +127,28 @@ if __name__ == "__main__":
             transform=PREPROCESS,
             download=True,
         )
+        start = time.time()
         x, y = extract(model, dataset, DEVICE)
-        assert x.shape[1] == EMBEDDING_DIM, x.shape
-        np.save(FEATURES_DIR / FEATURE_FILE.format(backbone=BACKBONE, split=split, kind="x"), x)
-        np.save(FEATURES_DIR / FEATURE_FILE.format(backbone=BACKBONE, split=split, kind="y"), y)
+        extraction_time += time.time() - start
+        assert x.shape == (len(dataset), FROZEN_EMBEDDING_DIMS[backbone]), x.shape
+        np.save(FEATURES_DIR / FEATURE_FILE.format(backbone=backbone, split=split, kind="x"), x)
+        np.save(FEATURES_DIR / FEATURE_FILE.format(backbone=backbone, split=split, kind="y"), y)
         print(f"{split}: features {x.shape}, labels {y.shape}, saved to {FEATURES_DIR}")
+
+    total_params, _ = count_params(model)
+    save_backbone_stats({
+        "backbone": backbone,
+        "embedding_dim": FROZEN_EMBEDDING_DIMS[backbone],
+        "total_params": total_params,
+        "gflops_per_image": gflops_per_image(model),
+        "extraction_time_s": extraction_time,
+        "device": DEVICE.type,
+    })
+    print(f"{backbone}: {total_params / 1e6:.1f}M params, "
+          f"extraction {extraction_time:.0f} s on {DEVICE.type}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("backbone", choices=list(FROZEN_EMBEDDING_DIMS))
+    main(parser.parse_args().backbone)
