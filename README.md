@@ -120,5 +120,42 @@ uv run python -m src.select_best
 
 - `features/`: cached embeddings (ignored by git);
 - `checkpoints/`: fine-tuned weights (ignored by git);
-- `results/`: `linear_probe.csv`, `finetune.csv`, `checkpoint_val.csv`, `best_model.json` (committed);
+- `results/`: `linear_probe.csv`, `finetune.csv`, `checkpoint_val.csv`, `best_model.json`,
+  plus evaluator outputs `summary_metrics.csv`, `efficiency_k20.csv`, plots, and `analysis/` (committed);
 - `logs/`: run logs (ignored by git).
+
+## Evaluation
+
+`src.evaluate` does not train models. It reads the committed per-run CSVs,
+recomputes mean +/- sample standard deviation over the five support-set seeds,
+and rebuilds the efficiency table and accuracy/macro-F1 plots:
+
+```bash
+uv run python -m src.evaluate
+```
+
+This writes `results/summary_metrics.csv`, `results/efficiency_k20.csv`,
+`results/accuracy_vs_k.png`, and `results/macro_f1_vs_k.png`. Only CSV files
+with the required per-run metric schema are included; incomplete or unrelated
+CSV files are not silently treated as experiment results.
+
+If a temporary `report_results.json` bundle is present, copy its per-run rows
+into `linear_probe.csv` / `finetune.csv` and then recompute the summaries:
+
+```bash
+uv run python -m src.evaluate --report-results report_results.json
+```
+
+For the required K=20 per-breed analysis, confusion matrix, and three visual
+failure cases with nearest support images, evaluate an existing fine-tuning
+checkpoint (the checkpoint and dataset must be available):
+
+```bash
+uv run python -m src.evaluate --checkpoint E5 20 4
+```
+
+It saves the raw predictions in `results/predictions/` and the per-breed table,
+confusion matrix, frequent-confusion failure-case table, and image panel in
+`results/analysis/`. The selected examples are the most confident representative
+errors of the three most frequent true-to-predicted breed pairs; inspect them
+before assigning a visual cause in the final report.
