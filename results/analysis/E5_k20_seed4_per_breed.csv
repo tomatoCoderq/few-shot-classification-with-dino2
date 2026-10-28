@@ -1,0 +1,38 @@
+true_label,true_breed,test_images,accuracy,errors
+2,American Pit Bull Terrier,100,0.35,65
+26,Ragdoll,100,0.38,62
+9,British Shorthair,100,0.69,31
+1,American Bulldog,100,0.72,28
+10,Chihuahua,100,0.73,27
+11,Egyptian Mau,97,0.7525773196,24
+34,Staffordshire Bull Terrier,89,0.797752809,18
+6,Birman,100,0.85,15
+32,Siamese,100,0.87,13
+23,Persian,100,0.88,12
+27,Russian Blue,100,0.88,12
+13,English Setter,100,0.89,11
+0,Abyssinian,98,0.8979591837,10
+33,Sphynx,100,0.9,10
+20,Maine Coon,100,0.9,10
+19,Leonberger,100,0.9,10
+8,Boxer,99,0.9090909091,9
+5,Bengal,100,0.91,9
+3,Basset Hound,100,0.94,6
+22,Newfoundland,100,0.95,5
+12,English Cocker Spaniel,100,0.96,4
+4,Beagle,100,0.96,4
+7,Bombay,88,0.9659090909,3
+21,Miniature Pinscher,100,0.97,3
+35,Wheaten Terrier,100,0.97,3
+24,Pomeranian,100,0.97,3
+36,Yorkshire Terrier,100,0.97,3
+16,Havanese,100,0.98,2
+30,Scottish Terrier,99,0.9898989899,1
+25,Pug,100,0.99,1
+28,Saint Bernard,100,0.99,1
+15,Great Pyrenees,100,0.99,1
+31,Shiba Inu,100,1.0,0
+29,Samoyed,100,1.0,0
+18,Keeshond,99,1.0,0
+17,Japanese Chin,100,1.0,0
+14,German Shorthaired,100,1.0,0

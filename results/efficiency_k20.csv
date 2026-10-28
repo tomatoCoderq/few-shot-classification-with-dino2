@@ -1,0 +1,4 @@
+experiment,backbone,classifier,runs,training_time_s_mean,training_time_s_std,trainable_params,total_params,devices
+E1,resnet50,logreg,5,1.24113845826,0.2026697725707986,75813,23583845,cpu
+E5,resnet50,finetune,5,132.5031862259,0.6847897919749828,15040549,23583845,cuda
+E6,resnet50,finetune,5,211.58260850905998,0.17380956486603272,23583845,23583845,cuda

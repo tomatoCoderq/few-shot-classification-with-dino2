@@ -1,0 +1,4 @@
+K,confidence,experiment,image_path,nearest_support_breed,nearest_support_cosine,nearest_support_path,pred_breed,pred_label,seed,test_index,true_breed,true_label,pair_count
+20,0.9991849,E5,american_pit_bull_terrier_46.jpg,Staffordshire Bull Terrier,0.86882544,staffordshire_bull_terrier_152.jpg,Staffordshire Bull Terrier,34,4,240,American Pit Bull Terrier,2,38
+20,0.99998295,E5,Ragdoll_53.jpg,Birman,0.9294524,Birman_175.jpg,Birman,6,4,2634,Ragdoll,26,34
+20,0.9999924,E5,american_bulldog_54.jpg,Boxer,0.95932794,boxer_126.jpg,Boxer,8,4,148,American Bulldog,1,24
