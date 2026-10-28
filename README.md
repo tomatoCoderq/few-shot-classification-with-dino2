@@ -70,10 +70,11 @@ All paths, hyperparameters and experiment definitions live in `src/config.py`.
 
 ### 1. Cache frozen ResNet-50 embeddings
 
-Used by the linear classifiers (E1/E4). Writes `features/resnet50_{split}_{x,y}.npy`:
+Used by the linear classifiers (E1/E4). Writes `features/resnet50_{split}_{x,y}.npy`
+and the backbone's parameters, GFLOPs and extraction time to `results/backbones.csv`:
 
 ```bash
-uv run python -m src.features
+uv run python -m src.features resnet50
 ```
 
 ### 2. Linear probe (E1)
@@ -116,46 +117,39 @@ Recomputes validation accuracy for every checkpoint, copies the best to
 uv run python -m src.select_best
 ```
 
+## DINOv2 and lightweight classifiers
+
+### 1. Cache frozen DINOv2 embeddings
+
+Weights come from `torch.hub` (`facebookresearch/dinov2`, downloaded to
+`~/.cache/torch/hub` on the first run); the embedding is the CLS token. Same
+preprocessing as ResNet-50. About 50 s (ViT-S/14) and 95 s (ViT-B/14) on an
+RTX 4060 Laptop GPU:
+
+```bash
+uv run python -m src.features dinov2_vits14
+uv run python -m src.features dinov2_vitb14
+```
+
+### 2. Classifiers on frozen embeddings (E2, E3, E4, E7, E7b)
+
+Logistic regression (C on validation, same as E1), prototype (nearest class
+mean, cosine) and cosine k-NN (k ≤ K on validation) for every K and seed.
+Experiments are defined in `FROZEN_EXPERIMENTS` in `src/config.py`; each takes
+seconds on CPU and writes `results/frozen_{experiment}.csv`:
+
+```bash
+uv run python -m src.classifiers E2   # ViT-S/14 + logreg
+uv run python -m src.classifiers E3   # ViT-S/14 + prototype, k-NN
+uv run python -m src.classifiers E4   # ResNet-50 + prototype, k-NN
+uv run python -m src.classifiers E7   # ViT-B/14 + prototype
+uv run python -m src.classifiers E7b  # ViT-B/14 + logreg
+```
+
 ### Outputs
 
 - `features/`: cached embeddings (ignored by git);
 - `checkpoints/`: fine-tuned weights (ignored by git);
 - `results/`: `linear_probe.csv`, `finetune.csv`, `checkpoint_val.csv`, `best_model.json`,
-  plus evaluator outputs `summary_metrics.csv`, `efficiency_k20.csv`, plots, and `analysis/` (committed);
+  `backbones.csv`, `frozen_e*.csv` (committed);
 - `logs/`: run logs (ignored by git).
-
-## Evaluation
-
-`src.evaluate` does not train models. It reads the committed per-run CSVs,
-recomputes mean +/- sample standard deviation over the five support-set seeds,
-and rebuilds the efficiency table and accuracy/macro-F1 plots:
-
-```bash
-uv run python -m src.evaluate
-```
-
-This writes `results/summary_metrics.csv`, `results/efficiency_k20.csv`,
-`results/accuracy_vs_k.png`, and `results/macro_f1_vs_k.png`. Only CSV files
-with the required per-run metric schema are included; incomplete or unrelated
-CSV files are not silently treated as experiment results.
-
-If a temporary `report_results.json` bundle is present, copy its per-run rows
-into `linear_probe.csv` / `finetune.csv` and then recompute the summaries:
-
-```bash
-uv run python -m src.evaluate --report-results report_results.json
-```
-
-For the required K=20 per-breed analysis, confusion matrix, and three visual
-failure cases with nearest support images, evaluate an existing fine-tuning
-checkpoint (the checkpoint and dataset must be available):
-
-```bash
-uv run python -m src.evaluate --checkpoint E5 20 4
-```
-
-It saves the raw predictions in `results/predictions/` and the per-breed table,
-confusion matrix, frequent-confusion failure-case table, and image panel in
-`results/analysis/`. The selected examples are the most confident representative
-errors of the three most frequent true-to-predicted breed pairs; inspect them
-before assigning a visual cause in the final report.

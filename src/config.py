@@ -19,10 +19,12 @@ VAL_RESULTS_PATH = RESULTS_DIR / "checkpoint_val.csv"
 BEST_RESULT_PATH = RESULTS_DIR / "best_model.json"
 BEST_CHECKPOINT_PATH = CHECKPOINT_DIR / "best.pt"
 LINEAR_PROBE_RESULTS_PATH = RESULTS_DIR / "linear_probe.csv"
+BACKBONES_RESULTS_PATH = RESULTS_DIR / "backbones.csv"
 
 # File name templates
 FEATURE_FILE = "{backbone}_{split}_{kind}.npy"  # kind: "x" (embeddings) or "y" (labels)
 CHECKPOINT_FILE = "{variant}_k{k}_seed{seed}.pt"
+FROZEN_RESULTS_FILE = "frozen_{experiment}.csv"
 
 # Dataset (Oxford-IIIT Pet)
 TRAINVAL_SPLIT = "trainval"
@@ -46,6 +48,15 @@ BACKBONE = "resnet50"
 PRETRAINED_WEIGHTS = "IMAGENET1K_V2"  # torchvision ResNet50_Weights member name
 EMBEDDING_DIM = 2048
 
+# Frozen backbones for cached embeddings: name -> embedding size.
+# DINOv2 names are torch.hub entry points; their output is the normalized CLS token.
+FROZEN_EMBEDDING_DIMS = {
+    BACKBONE: EMBEDDING_DIM,
+    "dinov2_vits14": 384,
+    "dinov2_vitb14": 768,
+}
+DINOV2_REPO = "facebookresearch/dinov2"
+
 # Experiments
 CLASSIFIER = "finetune"
 # variant name -> experiment id in the results table
@@ -57,6 +68,18 @@ HEAD_PREFIX = "fc"
 # Linear probe (E1): C is chosen on validation
 LINEAR_PROBE_C_GRID = (0.1, 1.0, 10.0, 100.0, 1000.0)
 LINEAR_PROBE_MAX_ITER = 5000
+
+# Lightweight classifiers on frozen embeddings: experiment id -> (backbone, classifiers)
+FROZEN_EXPERIMENTS = {
+    "E2": ("dinov2_vits14", ("logreg",)),
+    "E3": ("dinov2_vits14", ("prototype", "knn")),
+    "E4": (BACKBONE, ("prototype", "knn")),
+    # prototype: best E3 classifier by mean validation accuracy
+    "E7": ("dinov2_vitb14", ("prototype",)),
+    "E7b": ("dinov2_vitb14", ("logreg",)),
+}
+# k-NN: number of neighbours chosen on validation, only values k <= K are tried
+KNN_K_GRID = (1, 3, 5, 10, 20)
 
 # Fine-tuning
 EPOCHS = 30
