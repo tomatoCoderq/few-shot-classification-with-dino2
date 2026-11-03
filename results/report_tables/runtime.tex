@@ -1,0 +1,16 @@
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Method & Fit time (s) & Total (M) & Fitted (k) & GFLOPs & Device \\
+\midrule
+E1: logreg & 0.346 $\pm$ 0.019 & 23.58 & 75.81 & 8.17 & CPU \\
+E2: logreg & 0.501 $\pm$ 0.087 & 22.07 & 14.24 & 12.25 & CPU \\
+E3: knn & 0.048 $\pm$ 0.003 & 22.06 & 0.00 & 12.25 & CPU \\
+E3: prototype & 0.0017 $\pm$ 0.0016 & 22.07 & 14.21 & 12.25 & CPU \\
+E4: knn & 0.100 $\pm$ 0.004 & 23.51 & 0.00 & 8.17 & CPU \\
+E4: prototype & 0.0038 $\pm$ 0.0006 & 23.58 & 75.78 & 8.17 & CPU \\
+E5: finetune & 140.83 $\pm$ 2.48 & 23.58 & 15040.55 & 8.17 & CUDA \\
+E6: finetune & 218.94 $\pm$ 1.06 & 23.58 & 23583.85 & 8.17 & CUDA \\
+E7: prototype & 0.0016 $\pm$ 0.0005 & 86.61 & 28.42 & 46.32 & CPU \\
+E7b: logreg & 0.700 $\pm$ 0.106 & 86.61 & 28.45 & 46.32 & CPU \\
+\bottomrule
+\end{tabular}

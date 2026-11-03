@@ -1,0 +1,14 @@
+{
+  "experiment": "E5",
+  "K": 20,
+  "seed": 4,
+  "prediction_accuracy": 0.8926137912237667,
+  "prediction_macro_f1": 0.8903612616589204,
+  "recorded_accuracy": 0.8926137912237667,
+  "recorded_macro_f1": 0.8903612616589204,
+  "accuracy_difference_pp": 0.0,
+  "predictions": "results/predictions/E5_k20_seed4.csv",
+  "device": "mps",
+  "checkpoint": "checkpoints/best.pt",
+  "selection": "best validation checkpoint"
+}

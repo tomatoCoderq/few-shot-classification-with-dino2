@@ -1,4 +1,4 @@
-K,confidence,experiment,image_path,nearest_support_breed,nearest_support_cosine,nearest_support_path,pred_breed,pred_label,seed,test_index,true_breed,true_label,pair_count
-20,0.9991849,E5,american_pit_bull_terrier_46.jpg,Staffordshire Bull Terrier,0.86882544,staffordshire_bull_terrier_152.jpg,Staffordshire Bull Terrier,34,4,240,American Pit Bull Terrier,2,38
-20,0.99998295,E5,Ragdoll_53.jpg,Birman,0.9294524,Birman_175.jpg,Birman,6,4,2634,Ragdoll,26,34
-20,0.9999924,E5,american_bulldog_54.jpg,Boxer,0.95932794,boxer_126.jpg,Boxer,8,4,148,American Bulldog,1,24
+experiment,K,seed,test_index,true_label,pred_label,true_breed,pred_breed,confidence,image_path,nearest_support_path,nearest_support_breed,nearest_support_cosine,pair_count
+E5,20,4,507,5,11,Bengal,Egyptian Mau,0.99935275,data/oxford-iiit-pet/images/Bengal_1.jpg,data/oxford-iiit-pet/images/Egyptian_Mau_165.jpg,Egyptian Mau,0.8594930171966553,33
+E5,20,4,2630,26,6,Ragdoll,Birman,0.9977787,data/oxford-iiit-pet/images/Ragdoll_49.jpg,data/oxford-iiit-pet/images/Birman_171.jpg,Birman,0.9131134748458862,25
+E5,20,4,1990,20,26,Maine Coon,Ragdoll,0.999806,data/oxford-iiit-pet/images/Maine_Coon_244.jpg,data/oxford-iiit-pet/images/Ragdoll_147.jpg,Ragdoll,0.8303672075271606,19

@@ -1,0 +1,38 @@
+true_label,true_breed,E1_accuracy,E2_accuracy,E7b_accuracy
+34,Staffordshire Bull Terrier,0.797752808988764,0.7640449438202247,0.6853932584269663
+2,American Pit Bull Terrier,0.6,0.64,0.69
+9,British Shorthair,0.66,0.84,0.78
+26,Ragdoll,0.79,0.79,0.82
+5,Bengal,0.78,0.97,0.86
+6,Birman,0.69,0.85,0.87
+1,American Bulldog,0.85,0.9,0.89
+11,Egyptian Mau,0.8247422680412371,0.8865979381443299,0.9175257731958762
+23,Persian,0.92,0.94,0.93
+8,Boxer,0.9393939393939394,0.9191919191919192,0.9393939393939394
+0,Abyssinian,0.8571428571428571,0.9387755102040816,0.9489795918367347
+27,Russian Blue,0.76,0.96,0.95
+20,Maine Coon,0.83,0.9,0.95
+32,Siamese,0.94,0.92,0.96
+21,Miniature Pinscher,0.96,0.98,0.96
+3,Basset Hound,0.96,0.94,0.97
+19,Leonberger,0.97,0.98,0.97
+4,Beagle,1.0,0.95,0.97
+16,Havanese,0.99,0.98,0.98
+28,Saint Bernard,0.98,0.98,0.98
+12,English Cocker Spaniel,0.99,0.97,0.98
+15,Great Pyrenees,0.98,1.0,0.98
+35,Wheaten Terrier,0.94,0.97,0.98
+25,Pug,0.99,0.99,0.98
+7,Bombay,0.9886363636363636,1.0,0.9886363636363636
+18,Keeshond,0.9797979797979798,0.98989898989899,0.98989898989899
+22,Newfoundland,0.99,0.99,0.99
+13,English Setter,0.99,0.98,0.99
+10,Chihuahua,0.96,0.95,0.99
+36,Yorkshire Terrier,0.98,0.99,1.0
+29,Samoyed,0.99,1.0,1.0
+33,Sphynx,0.98,0.99,1.0
+31,Shiba Inu,1.0,0.98,1.0
+14,German Shorthaired,1.0,1.0,1.0
+17,Japanese Chin,1.0,1.0,1.0
+30,Scottish Terrier,0.98989898989899,1.0,1.0
+24,Pomeranian,0.99,1.0,1.0

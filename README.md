@@ -153,3 +153,71 @@ uv run python -m src.classifiers E7b  # ViT-B/14 + logreg
 - `results/`: `linear_probe.csv`, `finetune.csv`, `checkpoint_val.csv`, `best_model.json`,
   `backbones.csv`, `frozen_e*.csv` (committed);
 - `logs/`: run logs (ignored by git).
+
+## Final evaluation and report
+
+All commands below run from the repository root and use the local `.venv`.
+`uv sync --locked` installs the locked dependencies into that environment.
+
+Rebuild the complete comparison from the 200 original runs (10 methods,
+four shot counts, five seeds); this performs no model fitting:
+
+```bash
+.venv/bin/python -m src.evaluate
+.venv/bin/python -m unittest discover -s tests -v
+```
+
+This writes `results/summary_metrics.csv`, `results/efficiency_k20.csv` and
+both accuracy/macro-F1 curves. Each classifier has its own curve. Quality
+tables use sample standard deviation (`ddof=1`). Timings in the original CSVs
+include validation selection; frozen fits exclude feature extraction and test
+prediction. The K=20 cost table adds the recorded backbone GFLOPs and extraction
+time. Devices differ across experiments, so times are descriptive.
+
+To regenerate the failure analysis, first restore missing DINOv2 caches
+(frozen inference only; these commands preserve original runtime statistics):
+
+```bash
+.venv/bin/python -m src.features dinov2_vits14 --cache-only
+.venv/bin/python -m src.features dinov2_vitb14 --cache-only
+.venv/bin/python -m src.analyze --frozen E1 E2 E7b
+.venv/bin/python -m src.analyze --best-checkpoint
+```
+
+E1 needs the ResNet cache from the earlier extraction step. Frozen analysis
+fixes seed 0 and K=20 in advance, refits LR with the original validation-selected
+C, and writes predictions without changing the original run CSVs. The checkpoint
+analysis reads `checkpoints/best.pt` and `results/best_model.json` directly; the
+40 individual training checkpoints are not needed for this analysis.
+`results/analysis/*_provenance.json` records the regenerated metrics and any
+difference from the original run. Relative image paths resolve from this root.
+
+Predictions, per-breed metrics, confusion matrices and three failure pairs are
+saved under `results/predictions/` and `results/analysis/`. Support neighbours
+are searched within the predicted breed. Failure cases are the most frequent
+distinct error pairs, taking the highest-probability error in each pair.
+
+Generate the full results supplement, report tables and final failure panel,
+then compile the two-page report (requires [Tectonic](https://tectonic-typesetting.github.io/)):
+
+```bash
+.venv/bin/python -m src.reporting
+mkdir -p output/pdf
+cd reports
+tectonic --outdir ../output/pdf evaluation_report.tex
+```
+
+Deliverables:
+
+- `output/pdf/evaluation_report.pdf`: final two-page technical summary;
+- `reports/evaluation_report.tex`: editable report source;
+- `reports/final_results.md`: complete metrics, runtime, paired differences and
+  per-breed supplement;
+- `results/report_tables/`: generated accuracy, macro-F1 and runtime tables;
+- `results/analysis/final_failure_examples.png`: three test/support image pairs.
+
+The 200 source runs are retained unchanged. The older inconsistent E5 analysis
+was regenerated from `best.pt`; its confusion matrix now agrees with the
+corresponding source metrics. DINOv2 weights are downloaded on first use;
+feature caches and dataset images are ignored by Git and can be reconstructed
+with the commands above.

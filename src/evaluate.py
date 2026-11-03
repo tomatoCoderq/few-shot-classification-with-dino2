@@ -51,6 +51,7 @@ EXPERIMENT_VARIANTS = {"E5": "layer4", "E6": "full"}
 SKIP_METRIC_FILES = {
     "summary_metrics.csv", "efficiency_k20.csv", "checkpoint_val.csv",
 }
+RUN_KEY = ["experiment", "backbone", "classifier", "K", "seed"]
 
 
 def metric_frames(results_dir=RESULTS_DIR):
@@ -67,12 +68,24 @@ def metric_frames(results_dir=RESULTS_DIR):
     metrics = pd.concat(frames, ignore_index=True)
     metrics["K"] = metrics["K"].astype(int)
     metrics["seed"] = metrics["seed"].astype(int)
-    return metrics.drop_duplicates(["experiment", "K", "seed"], keep="last")
+    if metrics.duplicated(RUN_KEY).any():
+        raise ValueError("Duplicate experiment/backbone/classifier/K/seed rows")
+    return metrics
 
 
 def summarize_metrics(metrics):
     """Return mean and sample standard deviation over the five support sets."""
     group_columns = ["experiment", "backbone", "classifier", "K"]
+    for key, rows in metrics.groupby(group_columns):
+        if sorted(rows["seed"].tolist()) != list(range(5)):
+            raise ValueError(f"{key}: expected exactly seeds 0--4")
+    for key, rows in metrics.groupby(group_columns[:-1]):
+        if set(rows["K"]) != {1, 5, 10, 20}:
+            raise ValueError(f"{key}: expected K=1,5,10,20")
+    if not np.isfinite(metrics[list(METRIC_COLUMNS - {
+        "experiment", "backbone", "classifier", "device"
+    })].to_numpy(dtype=float)).all():
+        raise ValueError("Metrics contain non-finite values")
     summary = metrics.groupby(group_columns, as_index=False).agg(
         runs=("seed", "nunique"),
         accuracy_mean=("accuracy", "mean"),
@@ -86,24 +99,27 @@ def summarize_metrics(metrics):
         devices=("device", lambda values: ", ".join(sorted(set(values)))),
     )
     assert (summary["runs"] == 5).all(), "Every summary cell must have five seeds"
-    return summary.sort_values(["experiment", "K"]).reset_index(drop=True)
+    return summary.sort_values(group_columns).reset_index(drop=True)
 
 
 def plot_curves(summary, metric, output_path):
     """Plot one mean +/- std curve per experiment."""
     mean_column = f"{metric}_mean"
     std_column = f"{metric}_std"
-    figure, axis = plt.subplots(figsize=(8, 5))
-    for experiment, rows in summary.groupby("experiment", sort=True):
+    figure, axis = plt.subplots(figsize=(10, 5.5))
+    for (experiment, classifier), rows in summary.groupby(
+        ["experiment", "classifier"], sort=True
+    ):
         rows = rows.sort_values("K")
         axis.errorbar(
             rows["K"], rows[mean_column] * 100, yerr=rows[std_column] * 100,
-            marker="o", capsize=3, label=experiment,
+            marker="o", capsize=3, label=f"{experiment}: {classifier}",
         )
     axis.set(xlabel="K (labeled images per breed)", ylabel=f"Test {metric.replace('_', '-')} (%)")
     axis.set_xticks(sorted(summary["K"].unique()))
     axis.grid(alpha=0.3)
-    axis.legend(title="Experiment")
+    axis.legend(title="Experiment: classifier", loc="center left",
+                bbox_to_anchor=(1.01, 0.5), fontsize=8)
     figure.tight_layout()
     figure.savefig(output_path, dpi=180)
     plt.close(figure)
@@ -118,6 +134,12 @@ def write_summary_outputs(summary):
         "training_time_s_std", "trainable_params", "total_params", "devices",
     ]
     efficiency = summary[summary["K"] == 20][efficiency_columns]
+    backbones = pd.read_csv(RESULTS_DIR / "backbones.csv")
+    efficiency = efficiency.merge(backbones[[
+        "backbone", "gflops_per_image", "extraction_time_s", "device"
+    ]], on="backbone", validate="many_to_one").rename(
+        columns={"device": "extraction_device"}
+    )
     efficiency.to_csv(RESULTS_DIR / "efficiency_k20.csv", index=False)
     plot_curves(summary, "accuracy", RESULTS_DIR / "accuracy_vs_k.png")
     plot_curves(summary, "macro_f1", RESULTS_DIR / "macro_f1_vs_k.png")

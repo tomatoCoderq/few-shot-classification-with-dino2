@@ -1,0 +1,4 @@
+experiment,K,seed,test_index,true_label,pred_label,true_breed,pred_breed,confidence,image_path,nearest_support_path,nearest_support_breed,nearest_support_cosine,pair_count
+E1,20,0,248,2,34,American Pit Bull Terrier,Staffordshire Bull Terrier,0.8866158,data/oxford-iiit-pet/images/american_pit_bull_terrier_53.jpg,data/oxford-iiit-pet/images/staffordshire_bull_terrier_128.jpg,Staffordshire Bull Terrier,0.7601780295372009,23
+E1,20,0,631,6,26,Birman,Ragdoll,0.84333366,data/oxford-iiit-pet/images/Birman_3.jpg,data/oxford-iiit-pet/images/Ragdoll_172.jpg,Ragdoll,0.8472194671630859,16
+E1,20,0,595,5,11,Bengal,Egyptian Mau,0.7938505,data/oxford-iiit-pet/images/Bengal_98.jpg,data/oxford-iiit-pet/images/Egyptian_Mau_121.jpg,Egyptian Mau,0.6929669976234436,16

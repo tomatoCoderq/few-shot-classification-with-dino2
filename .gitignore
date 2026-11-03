@@ -1,4 +1,6 @@
 *.pdf
+!output/pdf/evaluation_report.pdf
+tmp/
 
 checkpoints/
 # results/
@@ -33,4 +35,3 @@ __pycache__/
 
 # Skills
 skill.md
-report.md

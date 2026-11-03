@@ -114,7 +114,7 @@ def save_backbone_stats(row):
         writer.writerows(rows)
 
 
-def main(backbone):
+def main(backbone, cache_only=False):
     """Extract embeddings for trainval and test, save them and the backbone's cost."""
     FEATURES_DIR.mkdir(parents=True, exist_ok=True)
     model = load_frozen_backbone(backbone, DEVICE)
@@ -135,6 +135,8 @@ def main(backbone):
         np.save(FEATURES_DIR / FEATURE_FILE.format(backbone=backbone, split=split, kind="y"), y)
         print(f"{split}: features {x.shape}, labels {y.shape}, saved to {FEATURES_DIR}")
 
+    if cache_only:
+        return
     total_params, _ = count_params(model)
     save_backbone_stats({
         "backbone": backbone,
@@ -151,4 +153,7 @@ def main(backbone):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("backbone", choices=list(FROZEN_EMBEDDING_DIMS))
-    main(parser.parse_args().backbone)
+    parser.add_argument("--cache-only", action="store_true",
+                        help="Restore embeddings without replacing recorded runtime statistics.")
+    args = parser.parse_args()
+    main(args.backbone, args.cache_only)

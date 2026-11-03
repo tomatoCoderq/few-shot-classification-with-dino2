@@ -1,0 +1,16 @@
+{
+  "experiment": "E2",
+  "K": 20,
+  "seed": 0,
+  "prediction_accuracy": 0.9416734805124012,
+  "prediction_macro_f1": 0.9411316698371224,
+  "recorded_accuracy": 0.9416734805124012,
+  "recorded_macro_f1": 0.9411316698371224,
+  "accuracy_difference_pp": 0.0,
+  "predictions": "results/predictions/E2_k20_seed0.csv",
+  "device": "cpu",
+  "backbone": "dinov2_vits14",
+  "classifier": "logreg",
+  "C": 10.0,
+  "selection": "seed 0 fixed in advance; C from original validation-selected CSV"
+}

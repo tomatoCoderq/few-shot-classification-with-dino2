@@ -1,0 +1,16 @@
+{
+  "experiment": "E1",
+  "K": 20,
+  "seed": 0,
+  "prediction_accuracy": 0.9146906514036522,
+  "prediction_macro_f1": 0.9135443795791397,
+  "recorded_accuracy": 0.9146906514036522,
+  "recorded_macro_f1": 0.9135443795791396,
+  "accuracy_difference_pp": 0.0,
+  "predictions": "results/predictions/E1_k20_seed0.csv",
+  "device": "cpu",
+  "backbone": "resnet50",
+  "classifier": "logreg",
+  "C": 10.0,
+  "selection": "seed 0 fixed in advance; C from original validation-selected CSV"
+}
