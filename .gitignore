@@ -2,7 +2,6 @@
 !output/pdf/evaluation_report.pdf
 tmp/
 
-checkpoints/
 features/
 logs/
 archive/
