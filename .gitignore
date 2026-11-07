@@ -3,7 +3,6 @@
 tmp/
 
 checkpoints/
-# results/
 features/
 logs/
 archive/
@@ -35,3 +34,12 @@ __pycache__/
 
 # Skills
 skill.md
+
+# Independent retraining artifacts (retain reports and metadata)
+new_runs/*.pt
+new_runs/*.npz
+new_runs/*.log
+
+new_runs/
+
+reports/*.md

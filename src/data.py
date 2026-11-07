@@ -128,7 +128,6 @@ def support_subset(trainval, splits, k, seed):
 
 
 if __name__ == "__main__":
-    # Validate the committed splits against the local dataset. Splits are not regenerated.
     trainval = load_pets(TRAINVAL_SPLIT)
     test = load_pets(TEST_SPLIT)
     labels = get_labels(trainval)

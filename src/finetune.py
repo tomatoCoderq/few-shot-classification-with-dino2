@@ -333,7 +333,6 @@ def run_finetune(variant, k, seed, device):
 
 
 if __name__ == "__main__":
-    # All E5 and E6 runs: 2 variants x 4 values of K x 5 seeds = 40 runs.
     for variant in VARIANTS:
         for k in SHOTS:
             for seed in SEEDS:

@@ -15,8 +15,6 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from src.config import (
     BACKBONES_RESULTS_PATH,
-    FEATURE_FILE,
-    FEATURES_DIR,
     FROZEN_EMBEDDING_DIMS,
     FROZEN_EXPERIMENTS,
     FROZEN_RESULTS_FILE,
@@ -28,6 +26,7 @@ from src.config import (
     TEST_SPLIT,
     TRAINVAL_SPLIT,
 )
+from src.feature_cache import load_features
 from src.data import get_labels, load_pets, load_splits
 from src.finetune import macro_f1
 # Importing linear_probe also turns sklearn ConvergenceWarning into an error.
@@ -50,12 +49,6 @@ RESULT_FIELDS = [
 ]
 
 
-def load_features(backbone, split):
-    """L2-normalized embeddings and labels saved by src.features."""
-    x = np.load(FEATURES_DIR / FEATURE_FILE.format(backbone=backbone, split=split, kind="x"))
-    y = np.load(FEATURES_DIR / FEATURE_FILE.format(backbone=backbone, split=split, kind="y"))
-    assert x.shape == (len(y), FROZEN_EMBEDDING_DIMS[backbone]), x.shape
-    return x / np.linalg.norm(x, axis=1, keepdims=True), y
 
 
 def backbone_params(backbone):

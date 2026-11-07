@@ -2,7 +2,7 @@ from pathlib import Path
 
 import torch
 
-# Paths (all relative to the project root)
+# Paths anchored at the repository root
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_ROOT = PROJECT_ROOT / "data"
 SPLITS_PATH = PROJECT_ROOT / "splits" / "splits.json"
@@ -10,7 +10,6 @@ FEATURES_DIR = PROJECT_ROOT / "features"
 RESULTS_DIR = PROJECT_ROOT / "results"
 CHECKPOINT_DIR = PROJECT_ROOT / "checkpoints"
 LOGS_DIR = PROJECT_ROOT / "logs"
-ARCHIVE_DIR = PROJECT_ROOT / "archive"
 
 FINETUNE_LOG_PATH = LOGS_DIR / "finetune_output.txt"
 

@@ -14,9 +14,9 @@
 \begin{document}
 \begin{center}
 {\Large\bfseries Few-Shot Classification with DINOv2 Embeddings}\\[3pt]
-{\normalsize Final Experimental Evaluation and Analysis}\\[3pt]
+{\normalsize Final Technical Report}\\[3pt]
 Marat Mestnikov \quad Evgeni Moskal \quad Khasan Sadykov \quad Martin Klimov\\
-{\small Computer Vision 2026 \enspace | \enspace November 3, 2026}
+{\small Computer Vision 2026 \enspace | \enspace November 7, 2026}
 \end{center}
 \vspace{-7pt}
 \section{Question, Data and Methods}
@@ -29,6 +29,7 @@ seed 2026), leaving a disjoint pool of 2,940. Five nested support sets per $K$
 test is excluded from fitting and selection. Input is resized to 256, center-cropped
 to $224\times224$, and normalized with ImageNet statistics.
 
+All DINOv2 backbones remain frozen; only the downstream classifier is fitted.
 Frozen ResNet-50 (ImageNet-1k V2), DINOv2 ViT-S/14 and ViT-B/14 provide L2-normalized
 2,048-, 384- and 768-dimensional features. Logistic regression (LR) selects
 $C\in\{0.1,1,10,100,1000\}$ on validation. Prototype uses cosine distance to class
@@ -81,11 +82,10 @@ E5/E6 on Kaggle T4. Hardware differs; timings are descriptive.
 DINOv2-B costs $5.7\times$ ResNet's forward GFLOPs.
 
 \section{Representative Failures and Difficult Breeds}
-Seed 0, $K=20$ and the original validation-selected LR parameter are fixed.
-Figure 1 shows the highest-probability mistake from each of E7b's three most frequent
-error pairs, above the closest predicted-class support image. Cosine is not a probability.
+Figure 1 shows the highest-scoring mistake in each of E7b's three most frequent error pairs
+($K=20$, seed 0, validation-selected $C$), paired with the nearest predicted-class support image.
 \begin{center}
-\includegraphics[width=0.87\textwidth]{../results/analysis/final_failure_examples.png}\\[-1pt]
+\includegraphics[width=0.69\textwidth]{../results/analysis/final_failure_examples.png}\\[-1pt]
 {\small Figure 1. Misclassified test images (top) and predicted-class support neighbours (bottom).}
 \end{center}
 \vspace{-6pt}
@@ -96,14 +96,22 @@ Validation adds 740 labels beyond the support budget. Architecture/pretraining d
 differ; gains cannot be attributed solely to self-supervision. Pretraining overlap
 was not audited. Standard deviations describe support sampling; failures concern one seed.
 
-Python 3.12, PyTorch 2.14.1, torchvision 0.29.1, scikit-learn 1.9.1; README gives
-the locked environment and local-venv commands for \texttt{src.evaluate},
-\texttt{src.analyze} and \texttt{src.reporting}. CSVs, curves and provenance are included.
-Restored E7b seed-0 accuracy is 94.36\% vs.\ 94.41\% recorded: two fewer correct
-(0.055 pp), logged separately. Tables retain original metrics.\\
+README documents the locked Python 3.12 environment and demo. Regenerated E7b seed-0 accuracy
+was 94.36\% vs.\ 94.41\% recorded (two fewer correct); tables use the original metrics.
+
 \textbf{Repository:} \url{https://github.com/tomatoCoderq/few-shot-classification-with-dino2}
 
-\textbf{Contributions:} Marat: supervised baseline and fine-tuning; Evgeni:
-DINOv2 extraction, classifiers and size ablation; Khasan: data, splits,
-preprocessing and reproducibility; Martin: evaluation, figures and failure analysis.
+\textbf{Conclusion.} DINOv2-B + LR leads at every $K$, gaining 3.3 pp over
+ResNet + LR at $K=20$ with higher extraction cost. Gradio runs all ten methods
+at $K=20$, seed 0.
+
+\textbf{Team contributions.}
+\textbf{Khasan Sadykov} set up the project and splits, implemented E1, and
+consolidated the final report and cross-model error analysis.
+\textbf{Marat Mestnikov} implemented ResNet-50 features, fine-tuning (E5/E6),
+and validation-based checkpoint selection.
+\textbf{Evgeni Moskal} implemented frozen DINOv2 features and lightweight
+classifier experiments E2, E3, E4, E7, and E7b.
+\textbf{Martin Klimov} built the evaluation pipeline and produced metric tables,
+plots, and per-breed and failure analyses for fine-tuned ResNet-50.
 \end{document}

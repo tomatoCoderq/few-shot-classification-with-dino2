@@ -1,7 +1,7 @@
 [project]
 name = "project"
 version = "0.1.0"
-description = "Add your description here"
+description = "Few-shot pet breed classification with frozen DINOv2 and ResNet-50"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -11,4 +11,9 @@ dependencies = [
     "scikit-learn>=1.9.1",
     "torch==2.14.1",
     "torchvision==0.29.1",
+]
+
+[project.optional-dependencies]
+demo = [
+    "gradio>=6,<7",
 ]

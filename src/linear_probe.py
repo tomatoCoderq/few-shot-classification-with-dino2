@@ -16,8 +16,6 @@ from sklearn.linear_model import LogisticRegression
 from src.config import (
     BACKBONE,
     EMBEDDING_DIM,
-    FEATURE_FILE,
-    FEATURES_DIR,
     LINEAR_PROBE_C_GRID,
     LINEAR_PROBE_MAX_ITER,
     LINEAR_PROBE_RESULTS_PATH,
@@ -27,6 +25,7 @@ from src.config import (
     TEST_SPLIT,
     TRAINVAL_SPLIT,
 )
+from src.feature_cache import load_features as load_cached_features
 from src.data import get_labels, load_pets, load_splits
 from src.features import count_params, load_backbone
 from src.finetune import macro_f1
@@ -54,11 +53,8 @@ RESULT_FIELDS = [
 
 
 def load_features(split):
-    """L2-normalized embeddings and labels saved by src.features."""
-    x = np.load(FEATURES_DIR / FEATURE_FILE.format(backbone=BACKBONE, split=split, kind="x"))
-    y = np.load(FEATURES_DIR / FEATURE_FILE.format(backbone=BACKBONE, split=split, kind="y"))
-    assert x.shape == (len(y), EMBEDDING_DIM), x.shape
-    return x / np.linalg.norm(x, axis=1, keepdims=True), y
+    """Load the ResNet-50 cache using the shared validation."""
+    return load_cached_features(BACKBONE, split)
 
 
 def fit_best_c(x_train, y_train, x_val, y_val):
