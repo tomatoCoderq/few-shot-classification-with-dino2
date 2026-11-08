@@ -20,6 +20,8 @@ E5/E6 use `checkpoints/layer4_k20_seed0.pt` and `full_k20_seed0.pt`.
 Frozen methods need local backbone weights, trainval feature caches and source CSVs.
 Prototype scores are relative similarities, not calibrated probabilities.
 
+Video of demo: [Video](https://drive.google.com/file/d/1Ey_D45wc7Zg0gqh6GQ9NS8rDx0OPYKRV/view?usp=sharing)
+
 ## Reproduce
 
 ```bash

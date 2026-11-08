@@ -34,7 +34,7 @@ EXPERIMENTS = {
 }
 RESNET = 'E5 · ResNet-50 · layer4'
 DINO = 'E7b · DINOv2-B + LR'
-BEST = 'Лучшая модель · E7b · DINOv2-B + LR'
+BEST = 'Best model · E7b · DINOv2-B + LR'
 MODELS = [BEST, *EXPERIMENTS]
 LABELS = Path(__file__).with_name('breed_names.json')
 
@@ -76,16 +76,16 @@ def missing_files(name):
 
 
 def status():
-    lines = ['### Доступность моделей']
+    lines = ['### Model files']
     for name in MODELS:
         missing = missing_files(name)
-        lines.append(f'**{name}**: ' + ('нет необходимых файлов:' if missing else
-                     'файлы найдены; загрузка и проверка при первом предсказании.'))
+        lines.append(f'**{name}**: ' + ('Missing required files:' if missing else
+                     'Files found. The app loads and checks them on the first prediction.'))
         lines.extend(f'- `{p}`' for p in missing)
-    lines.append('Все пункты: K=20, seed=0. Веса автоматически не скачиваются. '
-                 'Frozen-кеши: `python -m src.features <backbone> --cache-only`. '
-                 'Fine-tuning: `checkpoints/layer4_k20_seed0.pt` и '
-                 '`checkpoints/full_k20_seed0.pt`. `best.pt` не подменяет эти запуски.')
+    lines.append('All models use K=20, seed=0. The app loads weights from local files. '
+                 'Build frozen feature caches with `python -m src.features <backbone> --cache-only`. '
+                 'E5 and E6 use `checkpoints/layer4_k20_seed0.pt` and '
+                 '`checkpoints/full_k20_seed0.pt`, respectively.')
     return '\n\n'.join(lines)
 
 
@@ -120,7 +120,7 @@ def load_model(name):
         return load_model(DINO)
     missing = missing_files(name)
     if missing:
-        raise FileNotFoundError('Отсутствуют: ' + ', '.join(map(str, missing)))
+        raise FileNotFoundError('Missing required files: ' + ', '.join(map(str, missing)))
     experiment, backbone, method = spec(name)
     if method == 'finetune':
         model = resnet50(weights=None, num_classes=NUM_CLASSES)
@@ -131,12 +131,12 @@ def load_model(name):
         rows = [r for r in csv.DictReader(f) if r['K'] == '20' and r['seed'] == '0'
                 and r['classifier'] == method and r['experiment'] == experiment]
     if len(rows) != 1:
-        raise ValueError(f'Ожидалась одна строка {experiment}/{method} K=20 seed=0')
+        raise ValueError(f'Expected one result for {experiment}/{method} at K=20, seed=0.')
     x, y = load_features(backbone, 'trainval')
     support = load_splits()['support'][20][0]
     x, y = x[support], y[support]
     if not np.array_equal(np.unique(y), np.arange(NUM_CLASSES)):
-        raise ValueError('Классы кеша не соответствуют 37 породам')
+        raise ValueError('The cached labels do not match the 37 breeds.')
     if method == 'prototype':
         classifier = Prototype(x, y)
     elif method == 'knn':
@@ -150,7 +150,7 @@ def load_model(name):
 
 def predict(image, name):
     if image is None:
-        return {}, 'Загрузите изображение.'
+        return {}, 'Upload an image to get a prediction.'
     try:
         import json
         names = json.loads(LABELS.read_text())
@@ -164,12 +164,12 @@ def predict(image, name):
             embedding = output.cpu().numpy()
             embedding /= np.linalg.norm(embedding, axis=1, keepdims=True)
             scores = classifier.predict_proba(embedding)[0]
-        return dict(zip(names, map(float, scores))), f'{name} · K=20, seed=0 · устройство: {DEVICE}' + (
-            ' · Prototype: относительные оценки softmax(cosine), не вероятности.'
+        return dict(zip(names, map(float, scores))), f'{name} · K=20, seed=0 · Device: {DEVICE}' + (
+            ' · Prototype scores are cosine similarities rescaled with softmax for display.'
             if isinstance(classifier, Prototype) else '')
     except Exception as exc:
         logging.exception('Demo inference failed')
-        return {}, f'Не удалось выполнить предсказание: {exc}'
+        return {}, f'Prediction failed: {exc}'
 
 
 def examples():
@@ -195,30 +195,28 @@ def examples():
 def build_app():
     import gradio as gr
     with gr.Blocks(title='Pet breed classification', analytics_enabled=False) as app:
-        gr.Markdown('# Какая это порода?\n37 пород Oxford-IIIT Pet. Оценки модели '
-                    'не являются гарантией: неизвестные породы и другие объекты тоже '
-                    'будут отнесены к одному из 37 классов.')
-        gr.Markdown('Все методы показаны при K=20, seed=0. «Лучшая модель» — E7b: '
-                    'лучший метод по средней test accuracy при K=20 (94,20% по пяти seeds). '
-                    'Это сравнение результатов, а не выбор гиперпараметров по test. '
-                    'Для prototype показаны относительные оценки softmax косинусного сходства.')
-        with gr.Accordion('Доступность весов и кешей', open=False):
+        gr.Markdown('# What breed is this?\nThe model predicts one of 37 Oxford-IIIT Pet breeds '
+                    'for every image, including photos of breeds and objects outside the dataset.')
+        gr.Markdown('All methods use K=20, seed=0. E7b had the highest mean test accuracy '
+                    'at K=20 (94.20% across five seeds). Hyperparameters were selected on validation data. '
+                    'Prototype scores are cosine similarities rescaled with softmax for display.')
+        with gr.Accordion('Weights and feature caches', open=False):
             availability = gr.Markdown(status())
-        gr.Button('Обновить доступность файлов').click(status, outputs=availability)
-        selector = gr.Dropdown(MODELS, value=BEST, label='Модель')
+        gr.Button('Check model files').click(status, outputs=availability)
+        selector = gr.Dropdown(MODELS, value=BEST, label='Model')
         with gr.Row():
-            image = gr.Image(type='pil', label='Фото питомца')
-            output = gr.Label(num_top_classes=5, label='Top-5 пород')
-        message = gr.Textbox(label='Статус', interactive=False)
-        gr.Button('Определить породу', variant='primary').click(
+            image = gr.Image(type='pil', label='Pet photo')
+            output = gr.Label(num_top_classes=5, label='Top 5 breeds')
+        message = gr.Textbox(label='Status', interactive=False)
+        gr.Button('Predict breed', variant='primary').click(
             predict, [image, selector], [output, message], concurrency_limit=1)
         samples = examples()
         if samples:
-            gr.Markdown('### Примеры\nПервые три — верные ответы E7b, следующие — ошибки '
-                        'из сохранённого эксперимента. Другая модель может отвечать иначе.')
+            gr.Markdown('### Examples\nThe first three images show correct E7b predictions. '
+                        'The next three show errors from the recorded run. Other models may predict different breeds.')
             gr.Examples(samples, inputs=image)
         else:
-            gr.Markdown('Примеры недоступны: локальные изображения датасета не найдены.')
+            gr.Markdown('Example images are unavailable because the dataset images are missing locally.')
     return app
 
 
