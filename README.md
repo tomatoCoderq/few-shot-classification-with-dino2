@@ -43,14 +43,6 @@ already in the results CSV. To independently retrain demo weights without changi
 original results, use `uv run python scripts/train_new_runs.py --device mps`
 (or `cuda`/`cpu`). See `new_runs/README.md`. Training is currently stopped.
 
-## Export all experiment weights on Kaggle
-
-Import [the Kaggle notebook](notebooks/kaggle_all_weights.ipynb), enable GPU and
-Internet, and choose **Save & Run All**. The notebook bundles the project code
-and fixed splits. It exports 160 frozen classifier states, 40 ResNet checkpoints,
-shared backbone weights, and metric comparisons under `/kaggle/working/new_runs`.
-To continue from a previous saved Kaggle output, attach it and set `RESUME_FROM`.
-
 ## Reports
 
 ```bash
